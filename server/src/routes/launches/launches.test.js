@@ -1,95 +1,89 @@
 const request = require('supertest');
 const app = require('../../app');
-const { mongoConnect, MongoDisconnect } = require('../../services/mongo');
-const { loadPlanetsData } = require('../../models/planets.model');
+const { 
+  mongoConnect,
+  mongoDisconnect,
+} = require('../../services/mongo');
+const {
+  loadPlanetsData,
+} = require('../../models/planets.model');
 
-
-describe('Launches API Tests', ()=>{
-   beforeAll(async()=>{ // запускаем соединение с БД для тестов отдельно благодаря разбиению подключения к БД на модуль
+describe('Launches API', () => {
+  beforeAll(async () => {
     await mongoConnect();
     await loadPlanetsData();
-   });
+  });
 
-   afterAll(async()=>{
-    await MongoDisconnect(); //после завершения тестов требуется завершить соединение с БД
-});
+  afterAll(async () => {
+    await mongoDisconnect();
+  });
 
-const testingData = {
-    mission: 'KatkaToVillage',
-    rocket: 'Landrover 2008',
-    target: 'Lintupi',
-    launchDate: 'January 19, 2023',
-};
-
-const testingDataWithoutDate = {
-    mission: 'KatkaToVillage',
-    rocket: 'Landrover 2008',
-    target: 'Lintupi',
-
-};
-
-const testingDataWithInvalidDate = {
-    mission: 'KatkaToVillage',
-    rocket: 'Landrover 2008',
-    target: 'Lintupi',
-    launchDate: 'hz data',
-};
-
-
-describe('Test GET /launches', () => {
-    test('It should respond with 200 success', async () => { //синтаксис supertest проще и позволяет, помимо запросов, в цепочке функций expect() проверить несколько вещей
-        //вроде заголовков
-        const response = await request(app)
-            .get('/v1/launches')
-            .expect('Content-Type', /json/) //проверяем заголовок, поле Content-Type должно содержать слово json (применили регулярное выражение)
-            .expect(200);
+  describe('Test GET /launches', () => {
+    test('It should respond with 200 success', async () => {
+      const response = await request(app)
+        .get('/v1/launches')
+        .expect('Content-Type', /json/)
+        .expect(200);
     });
-});
-
-
-describe('Test POST /launch', () => {
+  });
+  
+  describe('Test POST /launch', () => {
+    const completeLaunchData = {
+      mission: 'USS Enterprise',
+      rocket: 'NCC 1701-D',
+      target: 'Kepler-62 f',
+      launchDate: 'January 4, 2028',
+    };
+  
+    const launchDataWithoutDate = {
+      mission: 'USS Enterprise',
+      rocket: 'NCC 1701-D',
+      target: 'Kepler-62 f',
+    };
+  
+    const launchDataWithInvalidDate = {
+      mission: 'USS Enterprise',
+      rocket: 'NCC 1701-D',
+      target: 'Kepler-62 f',
+      launchDate: 'zoot',
+    };
+  
     test('It should respond with 201 created', async () => {
-        const response = await request(app)
-            .post('/v1/launches')
-            .send(testingData)  //т.к. это post-запрос, они должен принимать некоторые данные для тестовой отправки на сервер
-            .expect('Content-Type', /json/)
-            .expect(201); //Также проверяем заголовок и статусКод в цепочке expect, для POST (create) это 201
-
-        const requestDate = new Date(testingData.launchDate).valueOf();//проверяем даты. valueOf() Возвращает сохраненное значение времени в миллисекундах с полуночи 1 января 1970 года по всемирному координированному времени.
-        const responseDate = new Date(response.body.launchDate).valueOf();//То есть мы сравним совпадение двух дат с точностью до миллисекунды
-        expect(responseDate).toBe(requestDate);
-
-        expect(response.body).toMatchObject(testingDataWithoutDate); //проверяем тело ответа с помощью функции jest toMatchObject()
-    });
-});
-
-test('It should catch missing required property', async () => {
-    const response = await request(app)
+      const response = await request(app)
         .post('/v1/launches')
-        .send(testingDataWithoutDate)  //т.к. это post-запрос, они должен принимать некоторые данные для тестовой отправки на сервер
+        .send(completeLaunchData)
+        .expect('Content-Type', /json/)
+        .expect(201);
+  
+      const requestDate = new Date(completeLaunchData.launchDate).valueOf();
+      const responseDate = new Date(response.body.launchDate).valueOf();
+      expect(responseDate).toBe(requestDate);
+  
+      expect(response.body).toMatchObject(launchDataWithoutDate);
+    });
+  
+    test('It should catch missing required properties', async () => {
+      const response = await request(app)
+        .post('/v1/launches')
+        .send(launchDataWithoutDate)
         .expect('Content-Type', /json/)
         .expect(400);
-
-    expect(response.body).toStrictEqual({
-        error: "Missed required launch property"
+  
+      expect(response.body).toStrictEqual({
+        error: 'Missing required launch property',
+      });
     });
-});
-
-
-test('It should catch invalid dates', async () => {
-    const response = await request(app)
+  
+    test('It should catch invalid dates', async () => {
+      const response = await request(app)
         .post('/v1/launches')
-        .send(testingDataWithInvalidDate)  //т.к. это post-запрос, они должен принимать некоторые данные для тестовой отправки на сервер
+        .send(launchDataWithInvalidDate)
         .expect('Content-Type', /json/)
         .expect(400);
-
-    expect(response.body).toStrictEqual({
-        error: "Invalid launch date"
+  
+      expect(response.body).toStrictEqual({
+        error: 'Invalid launch date',
+      });
     });
+  });
 });
-
-});
-
-
-
-
