@@ -18,14 +18,14 @@ async function httpAddNewLaunch(req, res) {
     const launch = req.body;
     if (!launch.mission || !launch.rocket || !launch.launchDate || !launch.target) {
         return res.status(400).json({
-            error: "Missed required launch property"
+            error: 'Missing required launch property'
         });
     }
     launch.launchDate = new Date(launch.launchDate);//конвертим из JSON в формат, установленный в нашем API - в объект даты
     //Когда мы добавим запуск в нашу карту, дата будетs хранится правильно
     if (isNaN(launch.launchDate)) {
         return res.status(400).json({
-            error: "Invalid launch date"
+            error: 'Invalid launch date'
         });
     }//Альтернатива валидации даты
     //if (launch.launchDate.toString() === 'Invalid Date') {
@@ -42,7 +42,7 @@ async function httpAbortLaunch (req, res) {
     const existLaunch = await existLaunchWithId(launchID);
     if (!existLaunch) {
         return res.status(404).json({
-            error: "Launch does not exist"
+            error: 'Launch does not exist'
         });
     }
    const aborted = await abortLaunchById(launchID);
