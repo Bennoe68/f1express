@@ -17,8 +17,8 @@ async function mongoConnect() {
     await mongoose.connect(MONGO_URL).then(() => console.log('Connected!')).catch((error) => console.log("There was an error: ", error));
 }
 
-async function MongoDisconnect() {
+async function mongoDisconnect() {
     await mongoose.disconnect();
 }
 
-module.exports = { mongoConnect, MongoDisconnect };
+module.exports = { mongoConnect, mongoDisconnect };
