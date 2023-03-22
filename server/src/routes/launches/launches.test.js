@@ -1,11 +1,13 @@
 const request = require('supertest');
 const app = require('../../app');
 const { mongoConnect, MongoDisconnect } = require('../../services/mongo');
+const { loadPlanetsData } = require('../../models/planets.model');
 
 
 describe('Launches API Tests', ()=>{
    beforeAll(async()=>{ // запускаем соединение с БД для тестов отдельно благодаря разбиению подключения к БД на модуль
     await mongoConnect();
+    await loadPlanetsData();
    });
 
    afterAll(async()=>{
